@@ -1,0 +1,50 @@
+{
+    "name": "tobento/app-event",
+    "type": "library",
+    "description": "App event support.",
+    "keywords": [
+        "tobento",
+        "package",
+        "app",
+        "event"
+    ],
+    "homepage": "https://www.tobento.ch",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tobias Strub",
+            "email": "info@tobento.ch",
+            "homepage": "https://www.tobento.ch"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.0",
+        "tobento/app": "^1.0",
+        "tobento/app-migration": "^1.0",
+        "tobento/service-event": "^1.0",
+        "tobento/service-dir": "^1.0",
+        "psr/event-dispatcher": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "vimeo/psalm": "^4.0",
+        "tobento/service-filesystem": "^1.0.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tobento\\App\\Event\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tobento\\App\\Event\\Test\\": "tests",
+            "Tobento\\Service\\Event\\Test\\": "vendor/tobento/service-event/tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --testdox --colors=always",
+        "psalm": "vendor/bin/psalm"
+    }
+}
