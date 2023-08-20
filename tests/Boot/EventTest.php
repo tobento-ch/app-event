@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Tobento\App\AppInterface;
 use Tobento\App\AppFactory;
 use Tobento\App\Event\Boot\Event;
+use Tobento\Service\Event\ListenersInterface;
 use Tobento\Service\Event\EventsFactoryInterface;
 use Tobento\Service\Event\EventsInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -60,11 +61,20 @@ class EventTest extends TestCase
         $app->boot(Event::class);
         $app->booting();
         
+        $this->assertInstanceof(ListenersInterface::class, $app->get(ListenersInterface::class));
         $this->assertInstanceof(EventsFactoryInterface::class, $app->get(EventsFactoryInterface::class));
         $this->assertInstanceof(EventsInterface::class, $app->get(EventsInterface::class));
         $this->assertInstanceof(EventDispatcherInterface::class, $app->get(EventDispatcherInterface::class));
         $this->assertSame($app->get(EventsInterface::class), $app->get(EventDispatcherInterface::class));
     }
+    
+    public function testListenersInterfaceIsDefinedAsPrototypeInApp()
+    {
+        $app = $this->createApp();
+        $app->boot(Event::class);
+        $app->booting();
+        $this->assertFalse($app->get(ListenersInterface::class) === $app->get(ListenersInterface::class));
+    }    
     
     public function testListenersAreAddedFromConfigWithDispatch()
     {
@@ -87,15 +97,11 @@ class EventTest extends TestCase
     {
         $app = $this->createApp();
         $app->dirs()->dir(realpath(__DIR__.'/../config/'), 'config-test', group: 'config', priority: 20);
-        $app->boot(Event::class);
-        
-        $app->set(ShopEvents::class, function() use ($app) {
-            return $app->get(EventsFactoryInterface::class)->createEvents();
-        });
-        
+        $app->boot(Event::class);        
         $app->booting();
                 
         $events = $app->get(ShopEvents::class);
+        $this->assertInstanceof(ShopEvents::class, $events);
         $this->assertSame(6, count($events->listeners()->all()));
         
         // only FooListener as others add not message to event:
