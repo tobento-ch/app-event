@@ -18,7 +18,6 @@ Event support for the app using the [**Event Service**](https://github.com/toben
             - [Dispatch Event](#dispatch-event)
         - [Specific Events](#specific-events)
             - [Create Events](#create-events)
-            - [Register Events](#register-events)
             - [Add Specific Listeners](#add-specific-listeners)
             - [Use Events](#use-events)
         - [Queue Listeners](#queue-listeners)
@@ -83,6 +82,7 @@ The following interfaces are available after booting:
 
 ```php
 use Tobento\App\AppFactory;
+use Tobento\Service\Event\ListenersInterface;
 use Tobento\Service\Event\EventsFactoryInterface;
 use Tobento\Service\Event\EventsInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -100,6 +100,9 @@ $app->dirs()
 // Adding boots
 $app->boot(\Tobento\App\Event\Boot\Event::class);
 $app->booting();
+
+$listeners = $app->get(ListenersInterface::class);
+// is declared as prototype, meaning returning always a new instance!
 
 $eventsFactory = $app->get(EventsFactoryInterface::class);
 $events = $app->get(EventsInterface::class);
@@ -195,7 +198,7 @@ return [
             ),
         ],
         
-        // Sepcify listeners without event:
+        // Specify listeners without event:
         'auto' => [
             Listener\SendWelcomeMail::class,
             
@@ -322,91 +325,7 @@ final class ShopEvents extends Events
 }
 ```
 
-#### Register Events
-
-After creating the events class you can register it in the app by the following ways:
-
-**By directly using the app**
-
-```php
-use Tobento\App\AppFactory;
-use Tobento\Service\Event\EventsFactoryInterface;
-
-// Create the app
-$app = (new AppFactory())->createApp();
-
-// Add directories:
-$app->dirs()
-    ->dir(realpath(__DIR__.'/../'), 'root')
-    ->dir(realpath(__DIR__.'/../app/'), 'app')
-    ->dir($app->dir('app').'config', 'config', group: 'config')
-    ->dir($app->dir('root').'vendor', 'vendor');
-    
-// Adding boots
-$app->boot(\Tobento\App\Event\Boot\Event::class);
-
-// Bind shop events to the app:
-$app->set(ShopEvents::class, function() use ($app) {
-    return $app->get(EventsFactoryInterface::class)->createEvents();
-});
-
-// Run the app
-$app->run();
-```
-
-**By using a boot**
-
-First, create the boot.
-
-```php
-use Tobento\App\Boot;
-use Tobento\App\Boot\Config;
-use Tobento\App\Migration\Boot\Migration;
-use Tobento\Service\Event\EventsFactoryInterface;
-use Tobento\App\Event\ConfigEventsRegistry;
-
-class ShopEventsBoot extends Boot
-{
-    public const BOOT = [
-        Config::class,
-        Migration::class,
-    ];
-    
-    public function boot(Config $config, Migration $migration): void
-    {
-        // you may install and load some config
-        // for defining listeners.
-        $migration->install(ShopEventsMigration::class);
-        $config = $config->load('shop_event.php');
-        
-        $this->app->set(ShopEvents::class, function() use ($config) {
-            
-            $events = $this->app->get(EventsFactoryInterface::class)->createEvents();
-            
-            // add listeners from config:
-            $events = (new ConfigEventsRegistry(priority: $config['listeners_priority']))
-                ->addListenersFromArray($events, $config['listeners']);
-            
-            return $events;
-        });
-    }
-}
-```
-
-Next, just add the boot:
-
-```php
-// ...
-
-$app->boot(ShopEventsBoot::class);
-$app->boot(\Tobento\App\Event\Boot\Event::class);
-
-// ...
-```
-
-You may check out the [**App Migration**](https://github.com/tobento-ch/app-migration) to learn more about it.
-
-You may check out the [**App Config**](https://github.com/tobento-ch/app#config-boot) to learn more about it.
+The ```ShopEvents::class``` will be autowired while using the app!
 
 #### Add Specific Listeners
 
@@ -446,7 +365,7 @@ return [
                 [Listener::class, ['number' => 5]],
             ],
 
-            // Sepcify listeners without event:
+            // Specify listeners without event:
             'auto' => [
                 Listener::class,
 
@@ -484,7 +403,6 @@ $app->dirs()
     ->dir($app->dir('root').'vendor', 'vendor');
     
 // Adding boots
-$app->boot(ShopEventsBoot::class);
 $app->boot(\Tobento\App\Event\Boot\Event::class);
 $app->booting();
 
@@ -497,6 +415,56 @@ $events->listen(AnyListener::class)
        ->event(FooEvent::class)
        ->priority(2000);
 
+// Run the app
+$app->run();
+```
+
+Check out the [**Add Listeners**](https://github.com/tobento-ch/service-event#add-listeners) to learn more about adding listeners.
+
+**Using the app ```on``` method**
+
+You can add listeners by using the app ```on``` method.
+
+```php
+use Tobento\App\AppFactory;
+use Tobento\App\Event\ConfigEventsRegistry;
+
+// Create the app
+$app = (new AppFactory())->createApp();
+
+// Add directories:
+$app->dirs()
+    ->dir(realpath(__DIR__.'/../'), 'root')
+    ->dir(realpath(__DIR__.'/../app/'), 'app')
+    ->dir($app->dir('app').'config', 'config', group: 'config')
+    ->dir($app->dir('root').'vendor', 'vendor');
+    
+// Adding boots
+$app->boot(\Tobento\App\Event\Boot\Event::class);
+$app->booting();
+
+$app->on(ShopEvents::class, function(ShopEvents $shopEvents) {
+    // Add listeners
+    $shopEvents->listen(FooListener::class);
+
+    // Or add listeners from config:
+    (new ConfigEventsRegistry(priority: 1000))->addListenersFromArray(
+        events: $shopEvents,
+        
+        // using same definition as config listeners.
+        eventListeners: [
+            SomeEvent::class => [
+                Listener::class,
+
+                // with build-in parameters:
+                [Listener::class, ['number' => 5]],
+                
+                // ...
+            ],
+        ],
+    );
+});
+        
 // Run the app
 $app->run();
 ```
