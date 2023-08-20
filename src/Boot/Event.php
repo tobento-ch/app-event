@@ -16,6 +16,9 @@ namespace Tobento\App\Event\Boot;
 use Tobento\App\Boot;
 use Tobento\App\Boot\Config;
 use Tobento\App\Migration\Boot\Migration;
+use Tobento\Service\Event\ListenersInterface;
+use Tobento\Service\Event\Listeners;
+use Tobento\Service\Event\AutowiringCallableFactory;
 use Tobento\Service\Event\EventsFactoryInterface;
 use Tobento\Service\Event\AutowiringEventsFactory;
 use Tobento\Service\Event\EventsInterface;
@@ -54,6 +57,13 @@ class Event extends Boot
         
         // load the event config:
         $config = $config->load('event.php');
+        
+        $this->app->set(ListenersInterface::class, function() {
+            return new Listeners(
+                callableFactory: new AutowiringCallableFactory($this->app->container())
+            );
+        })->prototype();
+        // declare as prototype so that custom events get autowired with a new instance.
         
         $this->app->set(EventsFactoryInterface::class, function() {
             return new AutowiringEventsFactory(
