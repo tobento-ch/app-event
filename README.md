@@ -20,7 +20,6 @@ Event support for the app using the [**Event Service**](https://github.com/toben
             - [Create Events](#create-events)
             - [Add Specific Listeners](#add-specific-listeners)
             - [Use Events](#use-events)
-        - [Queue Listeners](#queue-listeners)
 - [Credits](#credits)
 ___
 
@@ -34,7 +33,7 @@ composer require tobento/app-event
 
 ## Requirements
 
-- PHP 8.0 or greater
+- PHP 8.4 or greater
 
 # Documentation
 
@@ -56,7 +55,7 @@ The event boot does the following:
 use Tobento\App\AppFactory;
 
 // Create the app
-$app = (new AppFactory())->createApp();
+$app = new AppFactory()->createApp();
 
 // Add directories:
 $app->dirs()
@@ -88,7 +87,7 @@ use Tobento\Service\Event\EventsInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 // Create the app
-$app = (new AppFactory())->createApp();
+$app = new AppFactory()->createApp();
 
 // Add directories:
 $app->dirs()
@@ -226,7 +225,7 @@ use Tobento\App\AppFactory;
 use Tobento\Service\Event\EventsInterface;
 
 // Create the app
-$app = (new AppFactory())->createApp();
+$app = new AppFactory()->createApp();
 
 // Add directories:
 $app->dirs()
@@ -393,7 +392,7 @@ You can add listeners manually by using the ```ShopEvents::class```.
 use Tobento\App\AppFactory;
 
 // Create the app
-$app = (new AppFactory())->createApp();
+$app = new AppFactory()->createApp();
 
 // Add directories:
 $app->dirs()
@@ -430,7 +429,7 @@ use Tobento\App\AppFactory;
 use Tobento\App\Event\ConfigEventsRegistry;
 
 // Create the app
-$app = (new AppFactory())->createApp();
+$app = new AppFactory()->createApp();
 
 // Add directories:
 $app->dirs()
@@ -448,7 +447,7 @@ $app->on(ShopEvents::class, function(ShopEvents $shopEvents) {
     $shopEvents->listen(FooListener::class);
 
     // Or add listeners from config:
-    (new ConfigEventsRegistry(priority: 1000))->addListenersFromArray(
+    new ConfigEventsRegistry(priority: 1000)->addListenersFromArray(
         events: $shopEvents,
         
         // using same definition as config listeners.
@@ -516,10 +515,6 @@ $app->on(ShopService::class, ['dispatcher' => ShopEvents::class]);
 The ```AnotherShopService::class``` requires no action for injection as ```ShopEvents::class``` is defined as dispatcher which gets autowired.
 
 You may check out the [**App Definitions**](https://github.com/tobento-ch/app#definitions) and the [**App On**](https://github.com/tobento-ch/app#on) method for more information.
-
-### Queue Listeners
-
-In progress ...
 
 # Credits
 
